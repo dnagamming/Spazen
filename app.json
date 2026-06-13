@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "spazen",
+    "name": "Spazen",
     "slug": "spazen",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    // "icon": "./assets/icon.png",
     "scheme": "spazen",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -19,7 +19,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.spazen.app"
     },
     "web": {
       "output": "static",
@@ -43,6 +44,17 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0D0D0D"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c1b339c7-0bd6-4595-9954-0653117f4edd"
+      }
     }
   }
 }

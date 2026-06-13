@@ -1,33 +1,60 @@
-import { useEffect, useState } from "react";
+import { useState, useCallback } from "react";
 import * as Location from "expo-location";
+
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+import { useFocusEffect } from "expo-router";
 
 export default function useLocation() {
   const [location, setLocation] = useState<any>(null);
-  const [address, setAddress] = useState<string>("Fetching location...");
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        // 🔹 Ask permission
-        let { status } = await Location.requestForegroundPermissionsAsync();
+  const [address, setAddress] = useState(
+    "Fetching location..."
+  );
 
-        if (status !== "granted") {
-          setErrorMsg("Permission denied");
-          setAddress("Location not available");
-          return;
-        }
+  const [errorMsg, setErrorMsg] = useState<string | null>(
+    null
+  );
 
-        // 🔹 Get location (approximate)
-        let loc = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
-
-        setLocation(loc.coords);
-
-        // 🔹 Reverse Geocoding (SAFE)
+  useFocusEffect(
+    useCallback(() => {
+      const fetchLocation = async () => {
         try {
-          const result = await Location.reverseGeocodeAsync(loc.coords);
+          // 🔥 MANUAL LOCATION FIRST
+          const savedLocation =
+            await AsyncStorage.getItem(
+              "manualLocation"
+            );
+
+          if (savedLocation) {
+            setAddress(savedLocation);
+            return;
+          }
+
+          // 🔥 GPS PERMISSION
+          const { status } =
+            await Location.requestForegroundPermissionsAsync();
+
+          if (status !== "granted") {
+            setErrorMsg("Permission denied");
+            setAddress("Location unavailable");
+            return;
+          }
+
+          // 🔥 GET GPS
+          const loc =
+            await Location.getCurrentPositionAsync({
+              accuracy: Location.Accuracy.Highest,
+            });
+
+          setLocation(loc.coords);
+
+          // 🔥 REVERSE GEOCODE
+          const result =
+            await Location.reverseGeocodeAsync({
+              latitude: loc.coords.latitude,
+              longitude: loc.coords.longitude,
+            });
 
           if (result.length > 0) {
             const place = result[0];
@@ -35,26 +62,37 @@ export default function useLocation() {
             const area =
               place.district ||
               place.subregion ||
+              place.street ||
               place.city ||
               "Unknown area";
 
+            const city = place.city || "";
             const region = place.region || "";
 
-            setAddress(`${area}, ${region}`);
+            const finalAddress = [area, city, region]
+              .filter(Boolean)
+              .join(", ");
+
+            setAddress(finalAddress);
           } else {
             setAddress("Location found");
           }
-        } catch (geoError) {
-          console.log("Reverse geocoding failed:", geoError);
+        } catch (err) {
+          console.log(err);
+
+          setErrorMsg("Unable to fetch location");
+
           setAddress("Location unavailable");
         }
-      } catch (err) {
-        console.log("Location error:", err);
-        setErrorMsg("Unable to fetch location");
-        setAddress("Location unavailable");
-      }
-    })();
-  }, []);
+      };
 
-  return { location, address, errorMsg };
+      fetchLocation();
+    }, [])
+  );
+
+  return {
+    location,
+    address,
+    errorMsg,
+  };
 }

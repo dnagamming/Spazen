@@ -3,10 +3,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { salons } from "../../data/salon";
 import { useState } from "react";
+import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function SalonDetail() {
   const { name, index } = useLocalSearchParams();
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   // 🔥 Find salon using ID
   const salon = salons.find((s) => s.id === index);
@@ -83,13 +87,26 @@ export default function SalonDetail() {
 
         {/* 🔥 CART BAR */}
         {selectedItems.length > 0 && (
-          <View style={styles.cartBar}>
+          <View style={[styles.cartBar, { bottom: insets.bottom + 10}]}>
             <Text style={styles.cartText}>
               {selectedItems.length} service
               {selectedItems.length > 1 ? "s" : ""} | ₹{totalPrice}
             </Text>
 
-            <Text style={styles.proceedBtn}>Proceed</Text>
+            <Text
+                style={styles.proceedBtn}
+                onPress={() =>
+                    router.push({
+                        pathname: "/booking" as any,
+                        params: {
+                            total: totalPrice.toString(),
+                            count: selectedItems.length.toString(),
+                        },
+                    })
+                }
+            >
+                Proceed
+            </Text>
           </View>
         )}
       </SafeAreaView>

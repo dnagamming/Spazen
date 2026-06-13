@@ -4,86 +4,124 @@ import {
   StyleSheet,
   ScrollView,
   FlatList,
+  Pressable,
 } from "react-native";
+
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 
 import CategoryCard from "../../components/categoryCard";
 import ServiceCard from "../../components/serviceCard";
+import SalonCard from "../../components/salonCard";
+
 import { categories, services } from "../../data/dummyData";
 import { salons } from "../../data/salon";
+
 import { getDistance } from "../../utils/distance";
 import useLocation from "../../hooks/useLocation";
-import { useRouter } from "expo-router";
-import { Pressable } from "react-native";
 
 export default function HomeScreen() {
   const { location, address, errorMsg } = useLocation();
+
   const router = useRouter();
 
-  const nearbySalons =
-    location
-      ? salons.filter((salon) => {
-          const distance = getDistance(
-            location.latitude,
-            location.longitude,
-            salon.latitude,
-            salon.longitude
-          );
-          return distance <= 5;
-        })
-      : [];
+  const nearbySalons = location
+    ? salons.filter((salon) => {
+        const distance = getDistance(
+          location.latitude,
+          location.longitude,
+          salon.latitude,
+          salon.longitude
+        );
+
+        return distance <= 5;
+      })
+    : [];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#0D0D0D" }} edges={["top"]}>
-      <ScrollView style={styles.container}>
-
-        {/* Header */}
+    <SafeAreaView
+      style={styles.safeArea}
+      edges={["top"]}
+    >
+      <ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingBottom: 120,
+        }}
+      >
+        {/* 🔥 HEADER */}
         <View style={styles.header}>
           <Text style={styles.locationText}>
-            📍 {errorMsg ? "Location off" : address}
+            📍 {errorMsg ? "Location unavailable" : address}
           </Text>
-          <Text style={styles.heading}>Find Your Salon</Text>
+
+          <Pressable
+            onPress={() => router.push("/location-picker")}
+          >
+            <Text style={styles.changeLocation}>
+              Change Location
+            </Text>
+          </Pressable>
+
+          <Text style={styles.heading}>
+            Find My Salon
+          </Text>
         </View>
 
-        {/* Banner */}
+        {/* 🔥 BANNER */}
         <View style={styles.banner}>
-          <Text style={styles.bannerText}>Flat 20% OFF on Facial</Text>
+          <Text style={styles.bannerText}>
+            Flat 20% OFF on Facial
+          </Text>
         </View>
 
-        {/* 🔥 Nearby Salons */}
-        <Text style={styles.sectionTitle}>Nearby Salons</Text>
+        {/* 🔥 NEARBY */}
+        <Text style={styles.sectionTitle}>
+          Nearby Salons
+        </Text>
 
         {location ? (
           nearbySalons.length > 0 ? (
-            nearbySalons.map((salon) => {
-              const distance = getDistance(
-                location.latitude,
-                location.longitude,
-                salon.latitude,
-                salon.longitude
-              );
+            <FlatList
+              horizontal
+              data={nearbySalons}
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={{
+                paddingRight: 20,
+                paddingBottom: 10,
+              }}
+              renderItem={({ item }) => {
+                const distance = getDistance(
+                  location.latitude,
+                  location.longitude,
+                  item.latitude,
+                  item.longitude
+                );
 
-              return (
-                <Pressable
-                  key={salon.id}
-                  style={styles.serviceCard}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/salon/[index]",
-                      params: { index: salon.id, name: salon.name },
-                    })
-                  }
-                >
-                  <Text style={styles.serviceTitle}>{salon.name}</Text>
-                  <Text style={styles.rating}>⭐ {salon.rating}</Text>
-                  <Text style={styles.distance}>
-                    {distance.toFixed(1)} km away
-                  </Text>
-                </Pressable>
-              );
-            })
+                return (
+                  <View style={{ marginRight: 14 }}>
+                    <SalonCard
+                      salon={{ ...item, distance }}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/salon/[index]",
+                          params: {
+                            index: item.id,
+                            name: item.name,
+                          },
+                        })
+                      }
+                    />
+                  </View>
+                );
+              }}
+            />
           ) : (
-            <Text style={styles.infoText}>No salons found nearby</Text>
+            <Text style={styles.infoText}>
+              No salons found nearby
+            </Text>
           )
         ) : (
           <Text style={styles.infoText}>
@@ -91,146 +129,193 @@ export default function HomeScreen() {
           </Text>
         )}
 
-        {/* Quick Actions */}
-        <View style={styles.quickRow}>
-          <View style={styles.quickCard}>
-            <Text style={styles.quickText}>Book Again</Text>
-          </View>
-          <View style={styles.quickCard}>
-            <Text style={styles.quickText}>Offers</Text>
-          </View>
-          <View style={styles.quickCard}>
-            <Text style={styles.quickText}>Top Rated</Text>
+        {/* 🔥 QUICK ACTIONS */}
+        <View style={styles.quickSection}>
+          <Pressable style={styles.quickCardLarge}>
+            <Text style={styles.quickEmoji}>🔁</Text>
+
+            <Text style={styles.quickTitle}>
+              Book Again
+            </Text>
+
+            <Text style={styles.quickSubtitle}>
+              Rebook your recent services
+            </Text>
+          </Pressable>
+
+          <View style={styles.quickRow}>
+            <Pressable style={styles.quickCardSmall}>
+              <Text style={styles.quickEmoji}>🔥</Text>
+
+              <Text style={styles.quickTitle}>
+                Offers
+              </Text>
+            </Pressable>
+
+            <Pressable style={styles.quickCardSmall}>
+              <Text style={styles.quickEmoji}>⭐</Text>
+
+              <Text style={styles.quickTitle}>
+                Top Rated
+              </Text>
+            </Pressable>
           </View>
         </View>
 
-        {/* Categories */}
-        <Text style={styles.sectionTitle}>Salon Services</Text>
+        {/* 🔥 CATEGORIES */}
+        <Text style={styles.sectionTitle}>
+          Salon Services
+        </Text>
 
         <FlatList
           horizontal
-          showsHorizontalScrollIndicator={false}
           data={categories}
+          showsHorizontalScrollIndicator={false}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <CategoryCard item={item} />}
+          contentContainerStyle={{
+            paddingRight: 20,
+          }}
+          renderItem={({ item }) => (
+            <View style={{ marginRight: 14 }}>
+              <CategoryCard item={item} />
+            </View>
+          )}
         />
 
-        {/* Offer Strip */}
+        {/* 🔥 OFFER */}
         <View style={styles.offerStrip}>
           <Text style={styles.offerText}>
             ⚡ Limited time: Extra 10% OFF on all services
           </Text>
         </View>
 
-        {/* Services */}
-        <Text style={styles.sectionTitle}>Popular Services</Text>
+        {/* 🔥 POPULAR */}
+        <Text style={styles.sectionTitle}>
+          Popular Services
+        </Text>
 
         {services.map((item) => (
-          <ServiceCard key={item.id} item={item} />
+          <ServiceCard
+            key={item.id}
+            item={item}
+          />
         ))}
-
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#0D0D0D",
+  },
+
   container: {
-    padding: 16,
+    paddingHorizontal: 16,
   },
 
   header: {
-    marginBottom: 15,
+    marginBottom: 24,
   },
 
   locationText: {
-    color: "#aaa",
+    color: "#AAA",
     fontSize: 14,
-    marginBottom: 4,
+  },
+
+  changeLocation: {
+    color: "#E91E63",
+    fontSize: 13,
+    marginTop: 6,
+    marginBottom: 14,
+    fontWeight: "500",
   },
 
   heading: {
-    color: "#fff",
-    fontSize: 26,
+    color: "#FFF",
+    fontSize: 30,
     fontWeight: "bold",
-    marginBottom: 10,
   },
 
   banner: {
     backgroundColor: "#E91E63",
-    padding: 18,
-    borderRadius: 16,
-    marginBottom: 20,
+    padding: 20,
+    borderRadius: 20,
+    marginBottom: 26,
   },
 
   bannerText: {
-    color: "#fff",
-    fontSize: 16,
+    color: "#FFF",
+    fontSize: 17,
     fontWeight: "600",
   },
 
   sectionTitle: {
     color: "#E91E63",
-    fontSize: 18,
-    marginVertical: 12,
-  },
-
-  serviceCard: {
-    backgroundColor: "#1A1A1A",
-    padding: 16,
-    borderRadius: 14,
-    marginBottom: 12,
-  },
-
-  serviceTitle: {
-    color: "#fff",
-    fontSize: 16,
+    fontSize: 22,
     fontWeight: "600",
-  },
-
-  rating: {
-    color: "#FFD700",
-    marginTop: 4,
-  },
-
-  distance: {
-    color: "#aaa",
-    marginTop: 4,
+    marginTop: 10,
+    marginBottom: 16,
   },
 
   infoText: {
-    color: "#aaa",
-    marginBottom: 10,
+    color: "#888",
+    marginBottom: 16,
+  },
+
+  quickSection: {
+    marginTop: 8,
+    marginBottom: 28,
   },
 
   quickRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 20,
+    gap: 12,
   },
 
-  quickCard: {
+  quickCardLarge: {
     backgroundColor: "#1A1A1A",
-    padding: 12,
-    borderRadius: 12,
-    width: "30%",
+    padding: 20,
+    borderRadius: 18,
+    marginBottom: 12,
+  },
+
+  quickCardSmall: {
+    flex: 1,
+    backgroundColor: "#1A1A1A",
+    paddingVertical: 24,
+    borderRadius: 18,
     alignItems: "center",
   },
 
-  quickText: {
-    color: "#fff",
+  quickEmoji: {
+    fontSize: 26,
+    marginBottom: 10,
+  },
+
+  quickTitle: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
+  quickSubtitle: {
+    color: "#888",
+    marginTop: 4,
     fontSize: 13,
   },
 
   offerStrip: {
-    backgroundColor: "#262626",
-    padding: 12,
-    borderRadius: 10,
-    marginVertical: 15,
+    backgroundColor: "#1A1A1A",
+    padding: 16,
+    borderRadius: 16,
+    marginVertical: 24,
   },
 
   offerText: {
-    color: "#fff",
-    fontSize: 13,
+    color: "#FFF",
+    fontSize: 14,
+    fontWeight: "500",
   },
 });
